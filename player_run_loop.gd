@@ -5,6 +5,7 @@
 extends AnimatedSprite
 
 var animName = "idle"
+var animDict = Dictionary()
 var tempElapsed = 0
 var runElapsed = 0
 var run_loop = 0
@@ -20,6 +21,9 @@ var direction = 1
 func _ready():
 	set_process_input(true)
 	set_process(true)
+
+	animDict["idle"] = {start = 1, end = 1, fps = 1}
+	animDict["running"] = {start = 2, end = 6, fps = 10}
 
 func _process(delta):
 	runElapsed += delta
@@ -73,20 +77,11 @@ func _process(delta):
 
 func updateAnim(delta):
 	tempElapsed += delta
-	var fps = 10
-	var frameDelay = 1.0/fps
+	var frameDelay = 1.0/animDict[animName].fps
+	if get_frame() < animDict[animName].start || get_frame() > animDict[animName].end: tempElapsed = frameDelay+1
 
-	var startsAt
-	var endsAt
-	if animName == "running":
-		startsAt = 2
-		endsAt = 6
-	elif animName == "idle":
-		startsAt = 1
-		endsAt = 1
-	
 	while tempElapsed > frameDelay:
 		tempElapsed -= frameDelay
 		var frameToGo = get_frame()+1
-		if frameToGo > endsAt: frameToGo = startsAt
+		if frameToGo > animDict[animName].end: frameToGo = animDict[animName].start
 		set_frame(frameToGo)
