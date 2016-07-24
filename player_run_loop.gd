@@ -4,6 +4,7 @@
 
 extends AnimatedSprite
 
+var animName = "idle"
 var tempElapsed = 0
 var runElapsed = 0
 var run_loop = 0
@@ -21,8 +22,7 @@ func _ready():
 	set_process(true)
 
 func _process(delta):
-	tempElapsed = tempElapsed + delta
-	runElapsed = runElapsed + delta
+	runElapsed += delta
 	#If the player is running right
 	if Input.is_action_pressed("run_right"):
 		if direction == -1:
@@ -34,26 +34,10 @@ func _process(delta):
 			pos.x += speed.x
 			set_pos(pos)
 		self.set_pos(get_pos())
-		if tempElapsed > 0.1:
-			if run_loop == 0:
-				run_loop = 1
-				set_frame(2)
-			elif get_frame() == 2:
-				set_frame(3)
-				run_loop = 1
-			elif get_frame() == 6:
-				set_frame(5)
-				run_loop = -1
-			#Cycle forwards
-			elif get_frame() < 6 && run_loop == 1:
-				self.set_frame(get_frame() + 1)
-			#Cycle backwards
-			elif get_frame() > 2 && run_loop == -1:
-				self.set_frame(get_frame() - 1)
-			tempElapsed = 0
+		animName = "running"
 
 	#if the player is running left
-	elif  Input.is_action_pressed("run_left"):
+	elif Input.is_action_pressed("run_left"):
 		if direction == 1:
 			direction = -1
 			self.set_flip_h(true)
@@ -63,27 +47,14 @@ func _process(delta):
 			pos.x -= speed.x
 			set_pos(pos)
 		self.set_pos(get_pos())
-		if tempElapsed > 0.1:
-			if run_loop == 0:
-				run_loop = 1
-				set_frame(2)
-			elif get_frame() == 2:
-				set_frame(3)
-				run_loop = 1
-			elif get_frame() == 6:
-				set_frame(5)
-				run_loop = -1
-			#Cycle forwards
-			elif get_frame() < 6 && run_loop == 1:
-				self.set_frame(get_frame() + 1)
-			#Cycle backwards
-			elif get_frame() > 2 && run_loop == -1:
-				self.set_frame(get_frame() - 1)
-			tempElapsed = 0
-#If the player shot (button mash, not auto)d
-	if  Input.is_action_pressed("shoot"):
+		animName = "running"
+	else:
+		animName = "idle"
+
+	#If the player shot (button mash, not auto)d
+	if Input.is_action_pressed("shoot"):
 		if tempElapsed > 0.05:
-			if  shot_fired == 0:
+			if shot_fired == 0:
 				shot_fired = 1
 				var bullet = preload("res://bullet.scn").instance()
 				bullet.set_pos(get_node("shoot_from").get_global_pos())
@@ -92,10 +63,30 @@ func _process(delta):
 					bullet.set_pos(Vector2(bullet.get_pos().x - 24, bullet.get_pos().y))
 				get_node("../..").add_child(bullet)
 				set_frame(1)
-				tempElapsed = 0
 	elif shot_fired == 1:
 		run_loop = 0
 		tempElapsed = 0
 		shot_fired = 0
 		if get_frame() == 1:
 			set_frame(0)
+	updateAnim(delta)
+
+func updateAnim(delta):
+	tempElapsed += delta
+	var fps = 10
+	var frameDelay = 1.0/fps
+
+	var startsAt
+	var endsAt
+	if animName == "running":
+		startsAt = 2
+		endsAt = 6
+	elif animName == "idle":
+		startsAt = 1
+		endsAt = 1
+	
+	while tempElapsed > frameDelay:
+		tempElapsed -= frameDelay
+		var frameToGo = get_frame()+1
+		if frameToGo > endsAt: frameToGo = startsAt
+		set_frame(frameToGo)
